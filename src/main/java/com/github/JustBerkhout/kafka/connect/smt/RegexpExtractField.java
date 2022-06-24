@@ -46,8 +46,7 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
     public static final String OVERVIEW_DOC =
             "Mask specified fields with a valid null value for the field type (i.e. 0, false, empty string, and so on)."
                     + "<p/>For numeric and string fields, an optional replacement value can be specified that is converted to the correct type."
-                    + "<p/>Use the concrete transformation type designed for the record key (<code>" + Key.class.getName()
-                    + "</code>) or value (<code>" + Value.class.getName() + "</code>).";
+                    + "<p/>Use the concrete transformation type designed for the recordvalue (<code>" + Value.class.getName() + "</code>).";
 
     private static final String FIELDS_CONFIG = "fields";
     private static final String REPLACEMENT_CONFIG = "replacement";
@@ -172,23 +171,6 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
     protected abstract Object operatingValue(R record);
 
     protected abstract R newRecord(R base, Object value);
-
-    public static final class Key<R extends ConnectRecord<R>> extends RegexpExtractField<R> {
-        @Override
-        protected Schema operatingSchema(R record) {
-            return record.keySchema();
-        }
-
-        @Override
-        protected Object operatingValue(R record) {
-            return record.key();
-        }
-
-        @Override
-        protected R newRecord(R record, Object updatedValue) {
-            return record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), updatedValue, record.valueSchema(), record.value(), record.timestamp());
-        }
-    }
 
     public static final class Value<R extends ConnectRecord<R>> extends RegexpExtractField<R> {
         @Override
