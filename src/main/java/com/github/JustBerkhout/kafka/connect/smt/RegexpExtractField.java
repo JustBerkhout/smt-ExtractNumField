@@ -51,7 +51,7 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
     private static final String PURPOSE = "Extract numeric from the end of field value";
 
     private Set<String> myFields;
-    final Pattern p = Pattern.compile("([0-9]+)$");
+    final Pattern p = Pattern.compile("\\d+$");
 
     @Override
     public void configure(Map<String, ?> props) {
