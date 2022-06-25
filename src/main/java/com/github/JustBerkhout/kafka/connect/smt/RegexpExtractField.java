@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.apache.kafka.connect.transforms.util.Requirements.requireMap;
 import static org.apache.kafka.connect.transforms.util.Requirements.requireStruct;
@@ -44,21 +46,17 @@ import static org.apache.kafka.connect.transforms.util.Requirements.requireStruc
 public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements Transformation<R> {
 
     public static final String OVERVIEW_DOC =
-            "Mask specified fields with a valid null value for the field type (i.e. 0, false, empty string, and so on)."
+            "For the given fields extract the numeric data, by removing any non-numeric prefix"
                     + "<p/>For numeric and string fields, an optional replacement value can be specified that is converted to the correct type."
                     + "<p/>Use the concrete transformation type designed for the recordvalue (<code>" + Value.class.getName() + "</code>).";
 
     private static final String FIELDS_CONFIG = "fields";
-    private static final String REPLACEMENT_CONFIG = "replacement";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(FIELDS_CONFIG, ConfigDef.Type.LIST, ConfigDef.NO_DEFAULT_VALUE, new NonEmptyListValidator(),
-                    ConfigDef.Importance.HIGH, "Names of fields to mask.")
-            .define(REPLACEMENT_CONFIG, ConfigDef.Type.STRING, null, new ConfigDef.NonEmptyString(),
-                    ConfigDef.Importance.LOW, "Custom value replacement, that will be applied to all"
-                            + " 'fields' values (numeric or non-empty string values only).");
+                    ConfigDef.Importance.HIGH, "Names of fields.");
 
-    private static final String PURPOSE = "mask fields";
+    private static final String PURPOSE = "Extract numeric from the end of field value";
 
     private static final Map<Class<?>, Function<String, ?>> REPLACEMENT_MAPPING_FUNC = new HashMap<>();
     private static final Map<Class<?>, Object> PRIMITIVE_VALUE_MAPPING = new HashMap<>();
@@ -87,14 +85,12 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
         REPLACEMENT_MAPPING_FUNC.put(BigInteger.class, BigInteger::new);
     }
 
-    private Set<String> maskedFields;
-    private String replacement;
+    private Set<String> myFields;
 
     @Override
     public void configure(Map<String, ?> props) {
         final SimpleConfig config = new SimpleConfig(CONFIG_DEF, props);
-        maskedFields = new HashSet<>(config.getList(FIELDS_CONFIG));
-        replacement = config.getString(REPLACEMENT_CONFIG);
+        myFields = new HashSet<>(config.getList(FIELDS_CONFIG));
     }
 
     @Override
@@ -109,8 +105,8 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
     private R applySchemaless(R record) {
         final Map<String, Object> value = requireMap(operatingValue(record), PURPOSE);
         final HashMap<String, Object> updatedValue = new HashMap<>(value);
-        for (String field : maskedFields) {
-            updatedValue.put(field, masked(value.get(field)));
+        for (String field : myFields) {
+            updatedValue.put(field, doExtract(value.get(field)));
         }
         return newRecord(record, updatedValue);
     }
@@ -120,41 +116,19 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
         final Struct updatedValue = new Struct(value.schema());
         for (Field field : value.schema().fields()) {
             final Object origFieldValue = value.get(field);
-            updatedValue.put(field, maskedFields.contains(field.name()) ? masked(origFieldValue) : origFieldValue);
+            updatedValue.put(field, myFields.contains(field.name()) ? doExtract(origFieldValue) : origFieldValue);
         }
         return newRecord(record, updatedValue);
     }
 
-    private Object masked(Object value) {
+    private Object doExtract(Object value) {
         if (value == null) {
             return null;
         }
-        return replacement == null ? maskWithNullValue(value) : maskWithCustomReplacement(value, replacement);
-    }
-
-    private static Object maskWithCustomReplacement(Object value, String replacement) {
-        Function<String, ?> replacementMapper = REPLACEMENT_MAPPING_FUNC.get(value.getClass());
-        if (replacementMapper == null) {
-            throw new DataException("Cannot mask value of type " + value.getClass() + " with custom replacement.");
-        }
-        try {
-            return replacementMapper.apply(replacement);
-        } catch (NumberFormatException ex) {
-            throw new DataException("Unable to convert " + replacement + " (" + replacement.getClass() + ") to number", ex);
-        }
-    }
-
-    private static Object maskWithNullValue(Object value) {
-        Object maskedValue = PRIMITIVE_VALUE_MAPPING.get(value.getClass());
-        if (maskedValue == null) {
-            if (value instanceof List)
-                maskedValue = Collections.emptyList();
-            else if (value instanceof Map)
-                maskedValue = Collections.emptyMap();
-            else
-                throw new DataException("Cannot mask value of type: " + value.getClass());
-        }
-        return maskedValue;
+        final Pattern p = Pattern.compile("([0-9]+)$");
+        final Matcher m = p.matcher(value.toString());
+        m.find();
+        return m.group().toString();
     }
 
     @Override
