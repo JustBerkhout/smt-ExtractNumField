@@ -21,22 +21,14 @@ import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.data.Values;
-import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.NonEmptyListValidator;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,45 +39,19 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
 
     public static final String OVERVIEW_DOC =
             "For the given fields extract the numeric data, by removing any non-numeric prefix"
-                    + "<p/>For numeric and string fields, an optional replacement value can be specified that is converted to the correct type."
-                    + "<p/>Use the concrete transformation type designed for the recordvalue (<code>" + Value.class.getName() + "</code>).";
+            + "<p/>For numeric and string fields, an optional replacement value can be specified that is converted to the correct type."
+            + "<p/>Use the concrete transformation type designed for the recordvalue (<code>" + Value.class.getName() + "</code>).";
 
     private static final String FIELDS_CONFIG = "fields";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(FIELDS_CONFIG, ConfigDef.Type.LIST, ConfigDef.NO_DEFAULT_VALUE, new NonEmptyListValidator(),
-                    ConfigDef.Importance.HIGH, "Names of fields.");
+                    ConfigDef.Importance.HIGH, "Names of fields from which to extract the integer numerical portion at the end.");
 
     private static final String PURPOSE = "Extract numeric from the end of field value";
 
-    private static final Map<Class<?>, Function<String, ?>> REPLACEMENT_MAPPING_FUNC = new HashMap<>();
-    private static final Map<Class<?>, Object> PRIMITIVE_VALUE_MAPPING = new HashMap<>();
-
-    static {
-        PRIMITIVE_VALUE_MAPPING.put(Boolean.class, Boolean.FALSE);
-        PRIMITIVE_VALUE_MAPPING.put(Byte.class, (byte) 0);
-        PRIMITIVE_VALUE_MAPPING.put(Short.class, (short) 0);
-        PRIMITIVE_VALUE_MAPPING.put(Integer.class, 0);
-        PRIMITIVE_VALUE_MAPPING.put(Long.class, 0L);
-        PRIMITIVE_VALUE_MAPPING.put(Float.class, 0f);
-        PRIMITIVE_VALUE_MAPPING.put(Double.class, 0d);
-        PRIMITIVE_VALUE_MAPPING.put(BigInteger.class, BigInteger.ZERO);
-        PRIMITIVE_VALUE_MAPPING.put(BigDecimal.class, BigDecimal.ZERO);
-        PRIMITIVE_VALUE_MAPPING.put(Date.class, new Date(0));
-        PRIMITIVE_VALUE_MAPPING.put(String.class, "");
-
-        REPLACEMENT_MAPPING_FUNC.put(Byte.class, v -> Values.convertToByte(null, v));
-        REPLACEMENT_MAPPING_FUNC.put(Short.class, v -> Values.convertToShort(null, v));
-        REPLACEMENT_MAPPING_FUNC.put(Integer.class, v -> Values.convertToInteger(null, v));
-        REPLACEMENT_MAPPING_FUNC.put(Long.class, v -> Values.convertToLong(null, v));
-        REPLACEMENT_MAPPING_FUNC.put(Float.class, v -> Values.convertToFloat(null, v));
-        REPLACEMENT_MAPPING_FUNC.put(Double.class, v -> Values.convertToDouble(null, v));
-        REPLACEMENT_MAPPING_FUNC.put(String.class, Function.identity());
-        REPLACEMENT_MAPPING_FUNC.put(BigDecimal.class, BigDecimal::new);
-        REPLACEMENT_MAPPING_FUNC.put(BigInteger.class, BigInteger::new);
-    }
-
     private Set<String> myFields;
+    final Pattern p = Pattern.compile("([0-9]+)$");
 
     @Override
     public void configure(Map<String, ?> props) {
@@ -125,7 +91,6 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
         if (value == null) {
             return null;
         }
-        final Pattern p = Pattern.compile("([0-9]+)$");
         final Matcher m = p.matcher(value.toString());
         m.find();
         return m.group().toString();
