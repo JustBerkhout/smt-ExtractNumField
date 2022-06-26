@@ -42,7 +42,7 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
             + "<p/>This will result in a string representation of an integer (i.e datatype is string). Returns null if no number is found"
             + "<p/>Use the transformation type for the recordvalue (<code>" + Value.class.getName() + "</code>).";
 
-    private static final String FIELDS_CONFIG = "fields";
+    private static final String FIELDS_CONFIG = "Fields";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(FIELDS_CONFIG, ConfigDef.Type.LIST, ConfigDef.NO_DEFAULT_VALUE, new NonEmptyListValidator(),
