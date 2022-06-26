@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 import static org.apache.kafka.connect.transforms.util.Requirements.requireMap;
 import static org.apache.kafka.connect.transforms.util.Requirements.requireStruct;
 
-public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements Transformation<R> {
+public abstract class ExtractNumField<R extends ConnectRecord<R>> implements Transformation<R> {
 
     public static final String OVERVIEW_DOC =
             "For the given fields extract the numeric data, by removing any non-numeric prefix"
@@ -115,7 +115,7 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
 
     protected abstract R newRecord(R base, Object value);
 
-    public static final class Value<R extends ConnectRecord<R>> extends RegexpExtractField<R> {
+    public static final class Value<R extends ConnectRecord<R>> extends ExtractNumField<R> {
         @Override
         protected Schema operatingSchema(R record) {
             return record.valueSchema();
