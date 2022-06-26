@@ -39,8 +39,8 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
 
     public static final String OVERVIEW_DOC =
             "For the given fields extract the numeric data, by removing any non-numeric prefix"
-            + "<p/>For numeric and string fields, an optional replacement value can be specified that is converted to the correct type."
-            + "<p/>Use the concrete transformation type designed for the recordvalue (<code>" + Value.class.getName() + "</code>).";
+            + "<p/>This will result in a string representation of an integer (i.e datatype is string). Returns null if no number is found"
+            + "<p/>Use the transformation type for the recordvalue (<code>" + Value.class.getName() + "</code>).";
 
     private static final String FIELDS_CONFIG = "fields";
 
