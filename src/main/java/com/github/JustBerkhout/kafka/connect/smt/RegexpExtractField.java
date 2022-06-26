@@ -92,8 +92,12 @@ public abstract class RegexpExtractField<R extends ConnectRecord<R>> implements 
             return null;
         }
         final Matcher m = p.matcher(value.toString());
-        m.find();
-        return m.group().toString();
+        if (m.find()) {
+            return m.group();
+        }
+        else {
+            return null;
+        }
     }
 
     @Override
