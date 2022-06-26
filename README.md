@@ -24,3 +24,11 @@ The code of this transformation is based on the code of the SMT `MaskField` (see
 * This demo does not contain unit tests
 * This demo only implements a `Value`-class (no `Key`-class)
 * Nested fields have not been considered. At all.
+* Tombstones have not been considered. At all.
+* I've seen it work with the AvroConverter, the JsonSchemaConverter, the JsonConverter, the ProtobufConverter and the StringConverter. 
+* I've only used it with source connectors
+
+# Testing
+My testing has consisted to seeing whether messages appear the way I expect them in Confluent Control Center
+and in the kafka-console-consumer. This amounts to essentially none. Make sure you do your own.
+
