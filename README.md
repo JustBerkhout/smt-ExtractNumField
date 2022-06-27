@@ -29,6 +29,6 @@ The code of this transformation is based on the code of the SMT `MaskField` (see
 * I've only used it with source connectors
 
 # Testing
-My testing has consisted to seeing whether messages appear the way I expect them in Confluent Control Center
+My testing has consisted of seeing whether messages appear the way I expect them in Confluent Control Center
 and in the kafka-console-consumer. This amounts to essentially none. Make sure you do your own.
 
